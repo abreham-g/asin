@@ -1,0 +1,194 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ASIN_and_CATEGORY {
+  id                  Int       @id @default(autoincrement())
+  ASIN                String    @unique @db.VarChar
+  Category            String    @db.VarChar
+  existsInUk          Boolean?
+  hasBeenProcessed    Boolean?  @default(false)
+  ukAvailableOnAmazon Boolean?
+  ukBuyBoxPrice       Float?
+  ukPackageWeight     Float?
+  hasBeenProcessedUs  Boolean?  @default(false)
+  usBsrDrop           Float?
+  usBuyBoxPrice       Float?
+  usFbaFee            Float?
+  usReferralFee       Float?
+  profit              Float?
+  roi                 Float?
+  updatedAt           DateTime? @updatedAt
+}
+
+model asins {
+  updatedAt           DateTime? @updatedAt
+  hasBeenProcessed    Boolean?  @default(false)
+  ukPackageWeight     Float?
+  ukBuyBoxPrice       Float?
+  ukAvailableOnAmazon Boolean?
+  existsInUk          Boolean?
+  usBsrDrop           Float?
+  usBuyBoxPrice       Float?
+  usFbaFee            Float?
+  usReferralFee       Float?
+  profit              Float?
+  roi                 Float?
+  asin                String    @id @unique @db.VarChar
+  category            String    @db.VarChar
+  ukAmazonCurrent     Float?
+}
+
+model common_analyser_tool {
+  ASIN                    String    @id @unique @db.VarChar
+  US_Sell_Price           Float?
+  US_Package_Weight       Float?
+  US_Referral_Fee         Float?
+  US_Ref_Percentage       Float?
+  US_Fulfillment_Subtotal Float?
+  US_Variable_Closing_Fee Float?
+  UK_Sell_Price           Float?
+  UK_Package_Weight       Float?
+  ukAvailableOnAmazon     Boolean?
+  ukAmazonCurrent         Float?
+  ukBuyBoxPrice           Float?
+  hasBeenProcessed        Boolean?  @default(false)
+  updatedAt               DateTime? @updatedAt
+}
+
+model Final_UK_USA_5M_common {
+  ASIN                String    @id @unique @db.VarChar
+  Brand               String    @db.VarChar
+  Title               String    @db.VarChar
+  existsInUk          Boolean?
+
+  hasBeenProcessed    Boolean?  @default(false)
+  hasBeenProcessedUk    Boolean?  @default(false)
+  hasBeenProcessedUs    Boolean?  @default(false)
+
+  profit              Float?
+  roi                 Float?
+  ukAmazonCurrent     Float?
+  ukAvailableOnAmazon Boolean?
+  ukBuyBoxPrice       Float?
+  ukPackageWeight     Float?
+  updatedAt           DateTime? @updatedAt
+  usAvgBb360Day       Float?
+  usAvgBb90Day        Float?
+  usBsrDrop           Float?
+  usBuyBoxPrice       Float?
+  usFbaFee            Float?
+  usReferralFee       Float?
+}
+
+model New_USA_ASINS {
+  id       Int    @id @default(autoincrement())
+  asin     String @db.VarChar
+  category String @db.VarChar
+}
+
+model UK_USA_5M_common_ASIN {
+  ASIN  String @id @db.VarChar
+  Brand String @db.VarChar
+  Title String @db.VarChar
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model Amazon_Data {
+  ASIN    String?
+  Price   String?
+  Sold_by String?
+
+  @@ignore
+}
+
+model Amazon_UK {
+  ID              Int     @id @default(autoincrement())
+  ASIN            String? @db.VarChar
+  UK_buybox_price Int?
+  UK_Seller       String? @db.VarChar
+}
+
+model Amazon_UK_US_report {
+  ID               Int       @id @default(autoincrement())
+  ASIN             String?   @db.VarChar
+  Brand            String?   @db.VarChar
+  Title            String?   @db.VarChar
+  existsInUk       String?   @db.VarChar
+  hasBeenProcessed String?   @db.VarChar
+  profit           Float?
+  roi              Float?
+  ukBuyBoxPrice    Float?
+  UK_BB_seller     String?   @db.VarChar
+  ukPackageWeight  Float?
+  updatedAt        DateTime? @db.Timestamp(6)
+  usAvgBb360Day    Float?
+  usAvgBb90Day     Float?
+  usBsrDrop        Float?
+  usBuyBoxPrice    Float?
+  usFbaFee         Float?
+  usReferralFee    Float?
+}
+
+model Amazon_US {
+  ID              Int     @id @default(autoincrement())
+  ASIN            String? @db.VarChar
+  US_buybox_price Int?
+  US_Seller       String? @db.VarChar
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model Amazon_scarped_data {
+  ASIN    String?
+  Price   String?
+  Sold_by String?
+
+  @@ignore
+}
+
+model NEW_USER_REGISETER {
+  id       Int    @default(autoincrement())
+  email    String @db.VarChar
+  password String @db.VarChar
+
+  @@id([id, email])
+}
+
+model USER_REGISETER {
+  email    String @id @db.VarChar
+  password String @db.VarChar
+}
+
+model manual_SFS {
+  id   Int    @id @default(autoincrement())
+  ASIN String @db.VarChar
+}
+
+model manual_sfs {
+  ASIN String @id @db.VarChar
+}
+
+model new_GWS_Keepa {
+  ID                         Int      @id @default(autoincrement())
+  ASIN                       String?  @db.VarChar
+  Image                      Bytes?
+  TITLE                      String   @db.VarChar
+  Weight_grams               Int      @map("Weight grams")
+  Buy_Box_Price____          Float    @map("Buy Box Price ($)")
+  Sales_Rank_Drops__30_Days_ Float    @map("Sales Rank Drops (30 Days)")
+  Historic_FBA_sellers       Int      @map("Historic FBA sellers")
+  Referral_fee__             Float    @map("Referral fee %")
+  cost____                   Float    @map("cost ($)")
+  profit____                 Float    @map("profit ($)")
+  ROI____                    Float    @map("ROI (%)")
+  FBA_Sellers_Live           Int      @map("#FBA Sellers Live")
+  Saturation_Score           Float    @map("Saturation Score")
+  FBA_fees____               Float    @map("FBA fees ($)")
+  TOTAL_STOCK                Int      @map("TOTAL STOCK")
+  Timestamp                  DateTime @db.Timestamp(6)
+}
