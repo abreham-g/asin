@@ -552,8 +552,10 @@ export const processAsins = async () => {
                     usReferralFee: entry.usReferralFee as number,
                     usAvgBb90Day: entry.usAvgBb90Day as number,
                     usAvgBb360Day: entry.usAvgBb360Day as number,
-                    hasBeenProcessed: true,
-                    existsInUk: true,
+                    hasBeenProcessed: "t",  // Convert boolean to string
+                    existsInUk: "t", 
+                    // hasBeenProcessed: true,
+                    // existsInUk: true,
                   };
                 } else {
                   dataToUpdate = {
