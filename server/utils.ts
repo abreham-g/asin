@@ -542,7 +542,8 @@ export const processAsins = async () => {
                     // UK data
                     ukPackageWeight: entry.ukPackageWeight as number,
                     ukBuyBoxPrice: entry.ukBuyBoxPrice as number,
-                    ukAvailableOnAmazon: entry.ukAvailableOnAmazon as boolean,
+                    ukAvailableOnAmazon: entry.ukAvailableOnAmazon ? "t" : "f",
+                    // ukAvailableOnAmazon: entry.ukAvailableOnAmazon as boolean,
                     ukAmazonCurrent: entry.ukAmazonCurrent as number,
                     // US data
                     usBsrDrop: entry.usBsrDrop as number,
