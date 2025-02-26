@@ -395,8 +395,8 @@ export async function fetchUnprocessedAsins() {
   const data = await prisma.sample_a2a.findMany({
     where: {
       // hasBeenProcessed: false,
-      hasBeenProcessedUk: false,
-      hasBeenProcessedUs: false
+      hasBeenProcessedUk: "false",
+      hasBeenProcessedUs: "false"
     },
     take: 500000,
   });
