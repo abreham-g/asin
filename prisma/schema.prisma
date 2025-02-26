@@ -61,8 +61,9 @@ model common_analyser_tool {
   updatedAt               DateTime? @updatedAt
 }
 
-model Final_UK_USA_5M_common {
-  ASIN                String    @id @unique @db.VarChar
+model sample_a2a {
+  id                Int     @id @default(autoincrement())
+  ASIN              String  @unique  // Ensure ASIN is unique
   Brand               String    @db.VarChar
   Title               String    @db.VarChar
   existsInUk          Boolean?
