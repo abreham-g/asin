@@ -62,7 +62,7 @@ model common_analyser_tool {
 }
 
 model sample_a2a {
-  id                Int     @id @default(autoincrement())
+  ID              Int     @id @default(autoincrement())
   ASIN              String  @unique  // Ensure ASIN is unique
   Brand               String    @db.VarChar
   Title               String    @db.VarChar
