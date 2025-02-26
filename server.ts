@@ -14,10 +14,10 @@ app.get("/", (req, res) => {
 
 (async () => {
   // // The below populates us & uk database fields
-  // await processAsins();
+  await processAsins();
 
   // The below populates uk database fields
-  await populateUkDbFields();
+  // await populateUkDbFields();
 
   // // The below populates us database fields
   // await populateUsDbFields();
