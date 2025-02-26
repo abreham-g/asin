@@ -31,7 +31,7 @@ export async function fetchKeepaData(
 
 export async function fetchAsinsToPopulateUkDbFields() {
   try {
-    const data = await prisma.final_UK_USA_5M_common.findMany({
+    const data = await prisma.sample_a2a.findMany({
       where: {
         hasBeenProcessed: false,
         hasBeenProcessedUk: false,
@@ -49,7 +49,7 @@ export async function fetchAsinsToPopulateUkDbFields() {
 
 export async function fetchAsinsToPopulateUsDbFields() {
   try {
-    const data = await prisma.final_UK_USA_5M_common.findMany({
+    const data = await prisma.sample_a2a.findMany({
       where: {
         ukBuyBoxPrice: {
           gt: 0,
@@ -203,7 +203,7 @@ export const populateUkDbFields = async () => {
                     hasBeenProcessedUk: true,
                   };
                 }
-                return prisma.final_UK_USA_5M_common.update({
+                return prisma.sample_a2a.update({
                   where: {
                     ASIN: entry.asin,
                   },
@@ -351,7 +351,7 @@ export const populateUsDbFields = async () => {
                     hasBeenProcessedUs: true,
                   };
                 }
-                return prisma.final_UK_USA_5M_common.update({
+                return prisma.sample_a2a.update({
                   where: {
                     ASIN: entry.asin,
                   },
@@ -392,7 +392,7 @@ export const populateUsDbFields = async () => {
 };
 
 export async function fetchUnprocessedAsins() {
-  const data = await prisma.final_UK_USA_5M_common.findMany({
+  const data = await prisma.sample_a2a.findMany({
     where: {
       hasBeenProcessed: false,
       // hasBeenProcessedUk: false,
@@ -560,7 +560,7 @@ export const processAsins = async () => {
                     existsInUk: false,
                   };
                 }
-                return prisma.final_UK_USA_5M_common.update({
+                return prisma.sample_a2a.update({
                   where: {
                     ASIN: entry.asin,
                   },
