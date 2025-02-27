@@ -394,7 +394,7 @@ export const populateUsDbFields = async () => {
 export async function fetchUnprocessedAsins() {
   const data = await prisma.sample_a2a.findMany({
     where: {
-      hasBeenProcessed: false,
+      hasBeenProcessed: "f",
       // hasBeenProcessedUk: false,
       // hasBeenProcessedUs: false
     },
