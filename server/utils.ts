@@ -394,9 +394,9 @@ export const populateUsDbFields = async () => {
 export async function fetchUnprocessedAsins() {
   const data = await prisma.final_UK_USA_5M_common.findMany({
     where: {
-      hasBeenProcessed: false,
-      // hasBeenProcessedUk: false,
-      // hasBeenProcessedUs: false
+      // hasBeenProcessed: false,
+      hasBeenProcessedUk: false,
+      hasBeenProcessedUs: false
     },
     take: 500000,
   });
