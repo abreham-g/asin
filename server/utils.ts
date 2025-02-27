@@ -31,7 +31,7 @@ export async function fetchKeepaData(
 
 export async function fetchAsinsToPopulateUkDbFields() {
   try {
-    const data = await prisma.sample_a2a.findMany({
+    const data = await prisma.final_UK_USA_5M_common.findMany({
       where: {
         hasBeenProcessed: false,
         hasBeenProcessedUk: false,
@@ -49,7 +49,7 @@ export async function fetchAsinsToPopulateUkDbFields() {
 
 export async function fetchAsinsToPopulateUsDbFields() {
   try {
-    const data = await prisma.sample_a2a.findMany({
+    const data = await prisma.final_UK_USA_5M_common.findMany({
       where: {
         ukBuyBoxPrice: {
           gt: 0,
@@ -203,7 +203,7 @@ export const populateUkDbFields = async () => {
                     hasBeenProcessedUk: true,
                   };
                 }
-                return prisma.sample_a2a.update({
+                return prisma.final_UK_USA_5M_common.update({
                   where: {
                     ASIN: entry.asin,
                   },
@@ -351,7 +351,7 @@ export const populateUsDbFields = async () => {
                     hasBeenProcessedUs: true,
                   };
                 }
-                return prisma.sample_a2a.update({
+                return prisma.final_UK_USA_5M_common.update({
                   where: {
                     ASIN: entry.asin,
                   },
@@ -392,9 +392,9 @@ export const populateUsDbFields = async () => {
 };
 
 export async function fetchUnprocessedAsins() {
-  const data = await prisma.sample_a2a.findMany({
+  const data = await prisma.final_UK_USA_5M_common.findMany({
     where: {
-      hasBeenProcessed: "f",
+      hasBeenProcessed: false,
       // hasBeenProcessedUk: false,
       // hasBeenProcessedUs: false
     },
@@ -542,8 +542,7 @@ export const processAsins = async () => {
                     // UK data
                     ukPackageWeight: entry.ukPackageWeight as number,
                     ukBuyBoxPrice: entry.ukBuyBoxPrice as number,
-                    ukAvailableOnAmazon: entry.ukAvailableOnAmazon ? "t" : "f",
-                    // ukAvailableOnAmazon: entry.ukAvailableOnAmazon as boolean,
+                    ukAvailableOnAmazon: entry.ukAvailableOnAmazon as boolean,
                     ukAmazonCurrent: entry.ukAmazonCurrent as number,
                     // US data
                     usBsrDrop: entry.usBsrDrop as number,
@@ -552,10 +551,8 @@ export const processAsins = async () => {
                     usReferralFee: entry.usReferralFee as number,
                     usAvgBb90Day: entry.usAvgBb90Day as number,
                     usAvgBb360Day: entry.usAvgBb360Day as number,
-                    hasBeenProcessed: "t",  // Convert boolean to string
-                    existsInUk: "t", 
-                    // hasBeenProcessed: true,
-                    // existsInUk: true,
+                    hasBeenProcessed: true,
+                    existsInUk: true,
                   };
                 } else {
                   dataToUpdate = {
@@ -563,7 +560,7 @@ export const processAsins = async () => {
                     existsInUk: false,
                   };
                 }
-                return prisma.sample_a2a.update({
+                return prisma.final_UK_USA_5M_common.update({
                   where: {
                     ASIN: entry.asin,
                   },
