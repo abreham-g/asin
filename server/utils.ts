@@ -185,6 +185,7 @@ export const populateUkDbFields = async () => {
             console.log(
               `Batch ${batchIndex + 1}/${totalBatches} processed successfully`
             );
+            
             processed = true;
 
             await prisma.$transaction(
@@ -532,6 +533,7 @@ export const processAsins = async () => {
             console.log(
               `Batch ${batchIndex + 1}/${totalBatches} processed successfully`
             );
+            console.log(tokensLeft);
             processed = true;
 
             await prisma.$transaction(
