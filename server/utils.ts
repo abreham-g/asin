@@ -542,8 +542,8 @@ export const processAsins = async () => {
                     // UK data
                     ukPackageWeight: entry.ukPackageWeight as number,
                     ukBuyBoxPrice: entry.ukBuyBoxPrice as number,
-                    ukAvailableOnAmazon: entry.ukAvailableOnAmazon ? "t" : "f",
-                    // ukAvailableOnAmazon: entry.ukAvailableOnAmazon as boolean,
+                    // ukAvailableOnAmazon: entry.ukAvailableOnAmazon ? "t" : "f",
+                    ukAvailableOnAmazon: entry.ukAvailableOnAmazon as boolean,
                     ukAmazonCurrent: entry.ukAmazonCurrent as number,
                     // US data
                     usBsrDrop: entry.usBsrDrop as number,
@@ -552,10 +552,10 @@ export const processAsins = async () => {
                     usReferralFee: entry.usReferralFee as number,
                     usAvgBb90Day: entry.usAvgBb90Day as number,
                     usAvgBb360Day: entry.usAvgBb360Day as number,
-                    hasBeenProcessed: "t",  // Convert boolean to string
-                    existsInUk: "t", 
-                    // hasBeenProcessed: true,
-                    // existsInUk: true,
+                    // hasBeenProcessed: "t",  // Convert boolean to string
+                    // existsInUk: "t", 
+                    hasBeenProcessed: true,
+                    existsInUk: true,
                   };
                 } else {
                   dataToUpdate = {
