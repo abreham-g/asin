@@ -3,7 +3,7 @@ import {
   // populateUkDbFields,
   // populateUsDbFields,
   processAsins,
-} from "./server/processAsins";
+} from "./server/process";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
