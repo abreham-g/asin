@@ -133,6 +133,7 @@ export const processAsins = async () => {
               });
 
               console.log(`Batch ${batchIndex + 1}/${totalBatches} processed successfully`);
+              console.log(requiredTokens)
               processed = true;
 
               await prisma.$transaction(
