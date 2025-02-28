@@ -5,7 +5,6 @@ config(); // Load .env file
 
 const prisma = new PrismaClient();
 
-
 export async function checkTokenAmount(): Promise<number> {
   try {
     const apiKey = process.env.KEEPA_API_KEY;
@@ -13,9 +12,7 @@ export async function checkTokenAmount(): Promise<number> {
       throw new Error("KEEPA_API_KEY not found in environment variables");
     }
 
-    const response = await axios.get(
-      `https://api.keepa.com/token?key=${apiKey}`
-    );
+    const response = await axios.get(`https://api.keepa.com/token?key=${apiKey}`);
     return response.data.tokensLeft || 0;
   } catch (error) {
     console.log(`Failed to check token amount: ${error}`);
@@ -24,15 +21,12 @@ export async function checkTokenAmount(): Promise<number> {
 }
 
 export const tokenMultiplierBasedOnParams = 3;
-export async function fetchKeepaData(
-  asins: string[],
-  domain: number
-): Promise<any> {
+export async function fetchKeepaData(asins: string[], domain: number): Promise<any> {
   try {
     const response = await axios.get("https://api.keepa.com/product", {
       params: {
         key: process.env.KEEPA_API_KEY,
-        domain,
+        domain: domain, // Dynamically setting domain
         asin: asins.join(","),
         buybox: 1,
         stats: 30,
@@ -47,22 +41,19 @@ export async function fetchKeepaData(
 }
 
 export async function fetchUnprocessedAsins() {
-  const data = await prisma.final_UK_USA_5M_common.findMany({
+  return await prisma.final_UK_USA_5M_common.findMany({
     where: {
-      // hasBeenProcessed: false,
       hasBeenProcessedUk: false,
-      hasBeenProcessedUs: false
+      hasBeenProcessedUs: false,
     },
     take: 500000,
   });
-  return data;
 }
-
 
 export const processAsins = async () => {
   console.log("Running scheduled job");
   const asinsData = await fetchUnprocessedAsins();
-  if (!asinsData) {
+  if (!asinsData || asinsData.length === 0) {
     console.log("No data to process");
     return;
   }
@@ -73,108 +64,65 @@ export const processAsins = async () => {
   const retryDelay = 5 * 60 * 1000; // 5 minutes
   const totalBatches = Math.ceil(asinsData.length / batchSize);
 
-  console.log(
-    `Starting to process ${asinsData.length} ASINs in ${totalBatches} batches`
-  );
+  console.log(`Starting to process ${asinsData.length} ASINs in ${totalBatches} batches`);
 
-  // Process batches in groups of concurrentBatches
-  for (
-    let groupIndex = 0;
-    groupIndex < totalBatches;
-    groupIndex += concurrentBatches
-  ) {
+  for (let groupIndex = 0; groupIndex < totalBatches; groupIndex += concurrentBatches) {
     const batchPromises = [];
 
-    // Create up to concurrentBatches number of promises
-    for (
-      let i = 0;
-      i < concurrentBatches && groupIndex + i < totalBatches;
-      i++
-    ) {
+    for (let i = 0; i < concurrentBatches && groupIndex + i < totalBatches; i++) {
       const batchIndex = groupIndex + i;
       const start = batchIndex * batchSize;
       const end = Math.min(start + batchSize, asinsData.length);
-      const currentBatch = asinsData.slice(start, end);
+      const currentBatch = asinsData.slice(start, end).map((item) => item.ASIN);
 
-      const batchPromise = (async () => {
-        let retryCount = 0;
-        let processed = false;
+      batchPromises.push(
+        (async () => {
+          let retryCount = 0;
+          let processed = false;
 
-        console.log(`Processing batch ${batchIndex + 1}/${totalBatches}`);
+          console.log(`Processing batch ${batchIndex + 1}/${totalBatches}`);
 
-        while (!processed && retryCount < maxRetries) {
-          const tokensLeft = await checkTokenAmount();
-          const requiredTokens =
-            tokenMultiplierBasedOnParams * currentBatch.length * 2;
+          while (!processed && retryCount < maxRetries) {
+            const tokensLeft = await checkTokenAmount();
+            const requiredTokens = tokenMultiplierBasedOnParams * currentBatch.length * 2;
 
-          if (tokensLeft < requiredTokens) {
-            retryCount++;
-            console.log(
-              `Batch ${batchIndex + 1}/${totalBatches}: ` +
-                `Insufficient tokens. Required: ${requiredTokens}, Available: ${tokensLeft}`
-            );
-            console.log(
-              `Waiting ${
-                retryDelay / 1000 / 60
-              } minutes before retry ${retryCount}/${maxRetries}`
-            );
-            await new Promise((resolve) => setTimeout(resolve, retryDelay));
-            continue;
-          }
+            if (tokensLeft < requiredTokens) {
+              retryCount++;
+              console.log(`Batch ${batchIndex + 1}/${totalBatches}: Insufficient tokens. Required: ${requiredTokens}, Available: ${tokensLeft}`);
+              console.log(`Waiting ${retryDelay / 1000 / 60} minutes before retry ${retryCount}/${maxRetries}`);
+              await new Promise((resolve) => setTimeout(resolve, retryDelay));
+              continue;
+            }
 
-          try {
-            // First get UK data (domain 2)
-            const ukKeepaData = await fetchKeepaData(
-              currentBatch.map((item) => item.ASIN),
-              2
-            );
+            try {
+              const keepaData = await fetchKeepaData(currentBatch, 1); // Fetch US data first
+              if (!keepaData || !Array.isArray(keepaData.products)) {
+                console.error("No valid data received from Keepa.");
+                return;
+              }
 
-            // Then get US data (domain 1) for ASINs that exist in UK
-            const usProductsWhichExistInUk = ukKeepaData.products.filter(
-              (item: any) => item?.title?.length > 0
-            );
-            const usKeepaData = await fetchKeepaData(
-              usProductsWhichExistInUk.map((item: any) => item.asin),
-              1
-            );
+              // Filter UK and US data
+              const ukKeepaData = keepaData.products.filter((item) => item.domainId === 2);
+              const usKeepaData = keepaData.products.filter((item) => item.domainId === 1);
+              const usDataMap = new Map(usKeepaData.map((item) => [item.asin, item]));
 
-            // Create a map of US data for easy lookup
-            const usDataMap = new Map(
-              usKeepaData.products.map((item: any) => [item.asin, item])
-            );
-
-            // Combine UK and US data
-            const processedKeepaEntries = ukKeepaData.products.map(
-              (ukItem: any) => {
-                if (!(ukItem?.title?.length > 0)) {
-                  return {
-                    asin: ukItem.asin,
-                    exists: false,
-                  };
+              // Process and map the data
+              const processedKeepaEntries = ukKeepaData.map((ukItem) => {
+                if (!ukItem.title || ukItem.title.length === 0) {
+                  return { asin: ukItem.asin, exists: false };
                 }
 
-                const usItem = usDataMap.get(ukItem.asin) as any;
-                const ukAvailableOnAmazon =
-                  ukItem?.availabilityAmazon != null &&
-                  ukItem.availabilityAmazon >= 0;
-
-                let ukAmazonCurrent;
-                if (ukItem?.stats?.buyBoxIsAmazon) {
-                  ukAmazonCurrent = ukItem?.stats?.buyBoxPrice;
-                } else {
-                  const csvArray = ukItem?.csv[0];
-                  ukAmazonCurrent = csvArray[csvArray.length - 1];
-                }
+                const usItem = usDataMap.get(ukItem.asin);
+                const ukAvailableOnAmazon = ukItem.availabilityAmazon !== null && ukItem.availabilityAmazon >= 0;
+                let ukAmazonCurrent = ukItem.stats?.buyBoxIsAmazon ? ukItem.stats?.buyBoxPrice : ukItem.csv[0]?.[ukItem.csv[0].length - 1];
 
                 return {
                   asin: ukItem.asin,
                   exists: true,
-                  // UK data
-                  ukPackageWeight: ukItem?.packageWeight,
-                  ukBuyBoxPrice: ukItem?.stats?.buyBoxPrice,
+                  ukPackageWeight: ukItem.packageWeight,
+                  ukBuyBoxPrice: ukItem.stats?.buyBoxPrice,
                   ukAvailableOnAmazon,
                   ukAmazonCurrent,
-                  // US data
                   usBsrDrop: usItem?.stats?.salesRankDrops30,
                   usBuyBoxPrice: usItem?.stats?.buyBoxPrice,
                   usFbaFee: usItem?.fbaFees?.pickAndPackFee,
@@ -182,77 +130,50 @@ export const processAsins = async () => {
                   usAvgBb90Day: usItem?.stats?.avg90?.[18],
                   usAvgBb360Day: usItem?.stats?.avg365?.[18],
                 };
-              }
-            );
+              });
 
-            console.log(
-              `Batch ${batchIndex + 1}/${totalBatches} processed successfully`
-            );
-            console.log(requiredTokens);
-            processed = true;
+              console.log(`Batch ${batchIndex + 1}/${totalBatches} processed successfully`);
+              processed = true;
 
-            await prisma.$transaction(
-              processedKeepaEntries.map((entry: any) => {
-                let dataToUpdate;
-                if (entry.exists) {
-                  dataToUpdate = {
-                    // UK data
-                    ukPackageWeight: entry.ukPackageWeight as number,
-                    ukBuyBoxPrice: entry.ukBuyBoxPrice as number,
-                    ukAvailableOnAmazon: entry.ukAvailableOnAmazon as boolean,
-                    ukAmazonCurrent: entry.ukAmazonCurrent as number,
-                    // US data
-                    usBsrDrop: entry.usBsrDrop as number,
-                    usBuyBoxPrice: entry.usBuyBoxPrice as number,
-                    usFbaFee: entry.usFbaFee as number,
-                    usReferralFee: entry.usReferralFee as number,
-                    usAvgBb90Day: entry.usAvgBb90Day as number,
-                    usAvgBb360Day: entry.usAvgBb360Day as number,
-                    hasBeenProcessed: true,
-                    existsInUk: true,
-                  };
-                } else {
-                  dataToUpdate = {
-                    hasBeenProcessed: true,
-                    existsInUk: false,
-                  };
-                }
-                return prisma.final_UK_USA_5M_common.update({
-                  where: {
-                    ASIN: entry.asin,
-                  },
-                  data: dataToUpdate,
-                });
-              })
-            );
-          } catch (error) {
-            console.error(`Error processing batch ${batchIndex + 1}:`, error);
-            retryCount++;
-            await new Promise((resolve) => setTimeout(resolve, 30000));
+              await prisma.$transaction(
+                processedKeepaEntries.map((entry) => {
+                  return prisma.final_UK_USA_5M_common.update({
+                    where: { ASIN: entry.asin },
+                    data: entry.exists
+                      ? {
+                          ukPackageWeight: entry.ukPackageWeight,
+                          ukBuyBoxPrice: entry.ukBuyBoxPrice,
+                          ukAvailableOnAmazon: entry.ukAvailableOnAmazon,
+                          ukAmazonCurrent: entry.ukAmazonCurrent,
+                          usBsrDrop: entry.usBsrDrop,
+                          usBuyBoxPrice: entry.usBuyBoxPrice,
+                          usFbaFee: entry.usFbaFee,
+                          usReferralFee: entry.usReferralFee,
+                          usAvgBb90Day: entry.usAvgBb90Day,
+                          usAvgBb360Day: entry.usAvgBb360Day,
+                          hasBeenProcessed: true,
+                          existsInUk: true,
+                        }
+                      : {
+                          hasBeenProcessed: true,
+                          existsInUk: false,
+                        },
+                  });
+                })
+              );
+            } catch (error) {
+              console.error(`Error processing batch ${batchIndex + 1}:`, error);
+              retryCount++;
+              await new Promise((resolve) => setTimeout(resolve, 30000));
+            }
           }
-        }
-
-        if (!processed) {
-          console.log(
-            `Failed to process batch ${
-              batchIndex + 1
-            }/${totalBatches} after ${maxRetries} retries. ` +
-              `Skipping ${currentBatch.length} ASINs.`
-          );
-        }
-      })();
-
-      batchPromises.push(batchPromise);
+        })()
+      );
     }
 
-    // Wait for all concurrent batches to complete before moving to next group
     await Promise.all(batchPromises);
-
-    // Log progress after each group of concurrent batches
     if ((groupIndex + concurrentBatches) % 1000 === 0) {
-      console.log(
-        `Milestone: Processed ${groupIndex + concurrentBatches} batches`
-      );
+      console.log(`Milestone: Processed ${groupIndex + concurrentBatches} batches`);
     }
   }
 };
