@@ -1,7 +1,5 @@
 import express from "express";
 import {
-  // populateUkDbFields,
-  // populateUsDbFields,
   processAsins,
 } from "./server/process";
 
@@ -16,14 +14,7 @@ app.get("/", (req, res) => {
   // // The below populates us & uk database fields
   await processAsins();
 
-  // The below populates uk database fields
-  // await populateUkDbFields();
-
-  // // The below populates us database fields
-  // await populateUsDbFields();
-
-  // If we want to run all 3 functions at the same time, we can do so by running promise.all
-  // await Promise.all([processAsins(), populateUkDbFields(), populateUsDbFields()]);
+  
 })();
 
 app.listen(PORT, () => {
