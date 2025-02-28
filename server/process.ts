@@ -58,7 +58,7 @@ export const processAsins = async () => {
     return;
   }
 
-  const batchSize = 100; // Keepa's limit
+  const batchSize = 200; // Keepa's limit
   const concurrentBatches = 10; // Number of concurrent requests
   const maxRetries = 5;
   const retryDelay = 5 * 60 * 1000; // 5 minutes
