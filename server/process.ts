@@ -85,6 +85,8 @@ export const processAsins = async () => {
           while (!processed && retryCount < maxRetries) {
             const tokensLeft = await checkTokenAmount();
             const requiredTokens = tokenMultiplierBasedOnParams * currentBatch.length * 2;
+            
+            console.log(`Batch ${batchIndex + 1}/${totalBatches}: Tokens Required: ${requiredTokens}, Tokens Left: ${tokensLeft}`);
 
             if (tokensLeft < requiredTokens) {
               retryCount++;
@@ -133,7 +135,6 @@ export const processAsins = async () => {
               });
 
               console.log(`Batch ${batchIndex + 1}/${totalBatches} processed successfully`);
-              console.log(requiredTokens)
               processed = true;
 
               await prisma.$transaction(
