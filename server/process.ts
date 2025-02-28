@@ -23,6 +23,7 @@ export async function checkTokenAmount(): Promise<number> {
   }
 }
 
+export const tokenMultiplierBasedOnParams = 3;
 export async function fetchKeepaData(
   asins: string[],
   domain: number
