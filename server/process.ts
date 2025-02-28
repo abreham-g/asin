@@ -4,6 +4,7 @@ import { config } from "dotenv";
 config(); // Load .env file
 
 const prisma = new PrismaClient();
+let tokensUsed = 0;
 
 export async function checkTokenAmount(): Promise<number> {
   try {
@@ -85,7 +86,7 @@ export const processAsins = async () => {
           while (!processed && retryCount < maxRetries) {
             const tokensLeft = await checkTokenAmount();
             const requiredTokens = tokenMultiplierBasedOnParams * currentBatch.length * 2;
-            
+
             console.log(`Batch ${batchIndex + 1}/${totalBatches}: Tokens Required: ${requiredTokens}, Tokens Left: ${tokensLeft}`);
 
             if (tokensLeft < requiredTokens) {
@@ -136,6 +137,7 @@ export const processAsins = async () => {
 
               console.log(`Batch ${batchIndex + 1}/${totalBatches} processed successfully`);
               processed = true;
+              tokensUsed += requiredTokens; // Track tokens used for this batch
 
               await prisma.$transaction(
                 processedKeepaEntries.map((entry) => {
@@ -174,6 +176,7 @@ export const processAsins = async () => {
     }
 
     await Promise.all(batchPromises);
+    console.log(`Total Tokens Used: ${tokensUsed}`); // Log total tokens used
     if ((groupIndex + concurrentBatches) % 1000 === 0) {
       console.log(`Milestone: Processed ${groupIndex + concurrentBatches} batches`);
     }
