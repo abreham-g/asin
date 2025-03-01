@@ -60,8 +60,8 @@ export const processAsins = async () => {
     return;
   }
 
-  const batchSize = 20; // Keepa's limit
-  const concurrentBatches = 10; // Number of concurrent requests
+  const batchSize = 30; // Keepa's limit
+  const concurrentBatches = 5; // Number of concurrent requests
   const maxRetries = 5;
   const retryDelay = 5 * 60 * 1000; // 5 minutes
   const totalBatches = Math.ceil(asinsData.length / batchSize);
@@ -85,25 +85,21 @@ export const processAsins = async () => {
           console.log(`Processing batch ${batchIndex + 1}/${totalBatches}`);
 
           while (!processed && retryCount < maxRetries) {
-            const tokensLeftBefore = await checkTokenAmount(); // Token count before the API call
-            console.log(`Tokens Left Before: ${tokensLeftBefore}`);
-
             try {
-              const keepaData = await fetchKeepaData(currentBatch, 1); // Fetch data for batch
+              const tokensLeftBefore = await checkTokenAmount();
+              console.log(`Tokens Left Before: ${tokensLeftBefore}`);
 
+              const keepaData = await fetchKeepaData(currentBatch, 1);
               if (!keepaData || !Array.isArray(keepaData.products)) {
                 console.error("No valid data received from Keepa.");
                 return;
               }
 
-              // Process data here (same logic as before)...
-
-              // Filter UK and US data
+              // Filter and process data
               const ukKeepaData = keepaData.products.filter((item) => item.domainId === 2);
               const usKeepaData = keepaData.products.filter((item) => item.domainId === 1);
               const usDataMap = new Map(usKeepaData.map((item) => [item.asin, item]));
 
-              // Process and map the data
               const processedKeepaEntries = ukKeepaData.map((ukItem) => {
                 if (!ukItem.title || ukItem.title.length === 0) {
                   return { asin: ukItem.asin, exists: false };
@@ -130,17 +126,14 @@ export const processAsins = async () => {
               });
 
               // Log tokens used after API call
-              const tokensLeftAfter = await checkTokenAmount(); // Token count after the API call
+              const tokensLeftAfter = await checkTokenAmount();
               const tokensUsedForBatch = tokensLeftBefore - tokensLeftAfter;
-
               console.log(`Tokens Used for Batch ${batchIndex + 1}: ${tokensUsedForBatch}`);
-              tokensUsed += tokensUsedForBatch; // Track total tokens used
+              tokensUsed += tokensUsedForBatch;
 
-              // Mark batch as processed
               processed = true;
 
-              // Your database processing code...
-
+              // Using Prisma transaction to bulk update records
               await prisma.$transaction(
                 processedKeepaEntries.map((entry) => {
                   return prisma.final_UK_USA_5M_common.update({
@@ -170,7 +163,10 @@ export const processAsins = async () => {
             } catch (error) {
               console.error(`Error processing batch ${batchIndex + 1}:`, error);
               retryCount++;
-              await new Promise((resolve) => setTimeout(resolve, 30000));
+              if (retryCount < maxRetries) {
+                console.log(`Retrying in ${retryDelay / 1000} seconds...`);
+                await new Promise((resolve) => setTimeout(resolve, retryDelay));
+              }
             }
           }
         })()
