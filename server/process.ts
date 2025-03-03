@@ -32,7 +32,7 @@ export async function fetchKeepaData(asins: string[], domain: number): Promise<a
         asin: asins.join(","),
         buybox: 1,
         // stats: 30,
-        stats:7,
+        stats:1,
       },
     });
 
