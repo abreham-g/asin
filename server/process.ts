@@ -31,7 +31,8 @@ export async function fetchKeepaData(asins: string[], domain: number): Promise<a
         domain: domain, // Dynamically setting domain
         asin: asins.join(","),
         buybox: 1,
-        stats: 30,
+        // stats: 30,
+        stats:7,
       },
     });
 
