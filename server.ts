@@ -1,7 +1,9 @@
 import express from "express";
 import {
   processAsins,
-} from "./server/process";
+  populateUkDbFields,
+  populateUsDbFields,
+} from "./server/utils";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
