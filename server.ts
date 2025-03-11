@@ -12,7 +12,9 @@ app.get("/", (req, res) => {
 
 (async () => {
   // // The below populates us & uk database fields
-  await processAsins();
+  // await processAsins();
+  await populateUkDbFields();
+
 
   
 })();
